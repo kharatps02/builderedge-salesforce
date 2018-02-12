@@ -1,0 +1,204 @@
+<apex:page showHeader="false" standardStylesheets="false" sidebar="false" docType="html-5.0" applyBodyTag="False" applyHtmlTag="False">
+    
+<apex:slds />
+
+<html lang="en">
+<head>
+    <apex:stylesheet value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-ui-1.8.4.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Jquery_GanttChart, 'reset.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery.ganttView.css')}"/>
+    
+    <style type="text/css">
+        body {
+            font-family: tahoma, verdana, helvetica;
+            font-size: 0.8em;
+            padding: 10px;
+        }
+    </style>
+    <title>Gantt Chart</title>
+</head>
+<body class="slds-scope">
+	<apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-1.4.2.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'date.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-ui-1.8.4.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery.ganttView.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'data.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'data.js')}"/>
+    <apex:includeScript value="{!$Resource.forcetk}"/>
+    <apex:includeScript value="{!$Resource.cometd}"/>
+    <script>
+    	var projectData = {};
+    	var updatedData = [];
+    	   	
+    	$(function() {
+            	loadGanttChart();            
+            	$( "#saveBtn" ).click(saveChanges);
+            	//loadCometD();            	
+        });
+    
+    	function loadGanttChart(){
+        	$("#processing").css( "display", "" );
+            $.post("https://builderedge-poc.herokuapp.com/api/project/getalldetails",{session_id :'{!$Api.Session_ID}',user_id : '{!$User.Id}'},function(responseBody,status,xhr){
+                	$("#processing").css( "display", "none" );    
+                	console.log(responseBody);
+                	projectData =responseBody.projects;
+                	$("#ganttChart").ganttView({ 
+                    data: responseBody.projects,
+                    slideWidth: 900,
+                    behavior: {
+                        onClick: function (changedata) { 
+                            console.log(changedata);
+                            updatedData = jQuery.grep(updatedData, function(value) {
+                              return value.id != changedata.id;
+                            });
+                            updatedData.push(changedata);
+                            $("#saveBtn").css( "display", "" );
+                            var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                            $("#eventMessage").text(msg);
+                        },
+                        onResize: function (changedata) { 
+                            console.log(changedata);
+                            updatedData = jQuery.grep(updatedData, function(value) {
+                              return value.id != changedata.id;
+                            });
+                            updatedData.push(changedata);
+                            $("#saveBtn").css( "display", "" );
+                            var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                            $("#eventMessage").text(msg);
+                        },
+                        onDrag: function (changedata) { 
+                            console.log(changedata);
+                            updatedData = jQuery.grep(updatedData, function(value) {
+                              return value.id != changedata.id;
+                            });
+                            updatedData.push(changedata);
+                            $("#saveBtn").css( "display", "" );
+                            var msg = "You change "+changedata.name+" : { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                            $("#eventMessage").text(msg);
+                        }
+                    }
+                });               
+                },"json");
+        }
+    	function saveChanges(){
+            $("#processing").css( "display", "" );
+            var updatedRec = Object.assign([], updatedData);
+            var requestdata = {};
+            requestdata['session_id'] = '{!$Api.Session_ID}';
+            requestdata['user_id'] = '{!$User.Id}'; 
+         	requestdata['records'] = []; 
+            if(updatedRec != null && updatedRec.length > 0){
+                $.each(updatedRec, function( index, singleRec ) {
+                  	var rec = Object.assign({}, singleRec);
+                    var exId = rec.external_id;
+                    rec.external_id = rec.id;
+                    rec.id = exId;               
+                    rec.start_date = rec.start.getFullYear()+'-'+(rec.start.getMonth()+1)+'-'+rec.start.getDate();
+                    rec.end_date = rec.end.getFullYear()+'-'+(rec.end.getMonth()+1)+'-'+rec.end.getDate();
+                    delete rec["start"];
+                    delete rec["end"];
+                  	requestdata.records.push(rec);
+                }); 
+          		$.post("https://builderedge-poc.herokuapp.com/api/task/update ",
+                   	requestdata,
+                    function(data,status,xhr){
+             			$("#processing").css( "display", "none" );   
+                        console.log(data); 
+                        updatedData = [];
+                        alertMsg('Data Updated successfully.');
+             		}, 
+                   	"json");
+            	}           
+        }
+    	
+    	function alertMsg(msg){
+            $("#msg").html(msg);
+            $("#msgDiv").fadeIn();
+            setTimeout(function(){$("#msgDiv").fadeOut("slow");}, 2000); 
+        }
+    
+    	function loadCometD(){
+            var cometd = new org.cometd.CometD();
+            cometd.configure({
+                url: window.location.protocol+'//'+window.location.hostname+'/cometd/40.0/',
+                //url:'https://ap5.lightning.force.com/cometd/40.0/',
+                requestHeaders: { Authorization: 'Bearer {!$Api.Session_ID}'},
+              	appendMessageTypeToURL : false
+            });
+            cometd.websocketEnabled = false;
+            cometd.handshake(function(handshakeReply) {
+              	if (handshakeReply.successful) {
+                console.log('Connected to CometD.');
+                cometd.subscribe('/event/ProjectTaskService__e',
+                  	function(platformEvent) {
+                    	console.log('Platform event received: '+ JSON.stringify(platformEvent));
+                     	alert('Some changes occurred.');
+                        $("#ganttChart").html("");
+                        loadGanttChart();
+            	});               
+              }
+              else
+                console.error('Failed to connected to CometD.');
+            });
+        }
+    
+    </script>
+    
+    <article class="slds-card">
+		<div class="slds-card__header slds-grid">
+			<header class="slds-media slds-media_center slds-has-flexi-truncate">
+				<div class="slds-media__figure">
+				<span class="slds-icon_container slds-icon--small slds-icon-standard-account" title="Gantt Chart">
+					<img src="{!URLFOR($Asset.SLDS, 'assets/icons/standard/account_60.png')}" alt="Gantt Chart" />
+				</span>
+				</div>
+				<div class="slds-media__body">
+					<h2>
+					<a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Project Gantt Chart">
+						<span class="slds-text-heading_small">Project Gantt Chart</span>
+					</a>
+					</h2>
+				</div>
+			</header>
+		</div>
+		<div class="slds-card__body slds-card__body_inner">
+			
+            <div class="slds-box" style="text-align: center;">
+                <br/><br/>
+               		<div id="ganttChart"></div>
+            	<br/><br/>
+              	<button id="saveBtn" style="display:none;" class="slds-button slds-button_brand">Save Changes</button>
+            </div>
+		</div>
+		<footer class="slds-card__footer" style="text-align: left;">
+			<div id="eventMessage"></div>
+			
+		</footer>
+	</article>
+    
+    <div class="slds-notify_container" id="msgDiv" style="display : none;">
+      <div class="slds-notify slds-notify--toast" role="alert">
+        <div class="slds-notify__content">
+          <h2 class="slds-text-heading--small" id="msg">Base Toast</h2>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div id="processing" style="height: 640px; display:none;">
+        <section role="dialog" tabindex="-1" aria-label="Meaningful description of the modal content" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+            <div class="slds-p-around_medium" style="background: 0;">
+            	<div role="status" class="slds-spinner slds-spinner_medium">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+            </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" style="background: rgba(96, 97, 99, 0.8);"></div>
+    </div>
+</body>
+</html>
+</apex:page>
