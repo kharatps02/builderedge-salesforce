@@ -38,7 +38,7 @@
     
     	function loadGanttChart(){
         	$("#processing").css( "display", "" );
-            $.post("https://builderedge-poc.herokuapp.com/api/project/getalldetails",{session_id :'{!$Api.Session_ID}',user_id : '{!$User.Id}'},function(responseBody,status,xhr){
+            $.post("https://builderedge-poc.herokuapp.com/api/project/getalldetails",{session_id :'{!$Api.Session_ID}',user_id : '{!$User.Id}', org_id :'{!$Organization.Id}'},function(responseBody,status,xhr){
                 	$("#processing").css( "display", "none" );    
                 	console.log(responseBody);
                 	projectData =responseBody.projects;
@@ -86,6 +86,7 @@
             var requestdata = {};
             requestdata['session_id'] = '{!$Api.Session_ID}';
             requestdata['user_id'] = '{!$User.Id}'; 
+            requestdata['org_id'] = '{!$Organization.Id}';
          	requestdata['records'] = []; 
             if(updatedRec != null && updatedRec.length > 0){
                 $.each(updatedRec, function( index, singleRec ) {

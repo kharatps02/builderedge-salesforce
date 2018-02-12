@@ -27,7 +27,7 @@ public class ProjectTriggerHandler {
         System.debug('PlatformEventSetting'+PlatformEventSetting);
         if(ptClassObj.Projects != null && ptClassObj.Projects.size() > 0 && PlatformEventSetting.Publish__c){
            List<ProjectTaskService__e> ProjectTaskEvent = new List<ProjectTaskService__e>();
-            ProjectTaskEvent.add(new ProjectTaskService__e(Data__c=JSON.serialize(ptClassObj),User__c = UserInfo.getUserId(),Self__c =true,Action__c=action )); 
+            ProjectTaskEvent.add(new ProjectTaskService__e(Data__c=JSON.serialize(ptClassObj),User__c = UserInfo.getUserId(),OrgId__c=UserInfo.getOrganizationId(),Self__c =true,Action__c=action )); 
     
             // Call method to publish events
             List<Database.SaveResult> results = EventBus.publish(ProjectTaskEvent);
