@@ -15,8 +15,7 @@ public with sharing class QueryHandler {
         Author      : Jitendra Kawale.
     ************************************************************************************************/
     public static List<Sobject> getQueryData(String objectName, List<string> fieldList, string queryCondition, String innerQuery) {
-      try{
-                String queryString = 'SELECT Id';   
+     			String queryString = 'SELECT Id';   
                 if(fieldList != null) {     
                     for(string field : fieldList)
                         queryString += ', '+field;
@@ -34,9 +33,6 @@ public with sharing class QueryHandler {
                 }
                 system.debug('queryString==>'+queryString);
                 return database.query(queryString);
-            }catch(Exception e) {
-                system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
-            }
         return null;
     } 
     
@@ -47,8 +43,7 @@ public with sharing class QueryHandler {
         Author      : Jitendra Kawale.
     ************************************************************************************************/
     public static List<Sobject> getQueryDataWithAdvanceConditions(String objectName, List<string> fieldList, string queryCondition, Set<Id> SetConditionIds) {
-       try{
-                String queryString = 'SELECT Id';   
+      			String queryString = 'SELECT Id';   
                 if(fieldList != null) {     
                     for(string field : fieldList)
                         queryString += ', '+field;
@@ -63,9 +58,6 @@ public with sharing class QueryHandler {
                 }    
                 system.debug('queryString==>'+queryString);
                 return database.query(queryString);
-            }catch(Exception e) {
-                system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
-            }
         return null;
     }
     
@@ -76,13 +68,9 @@ public with sharing class QueryHandler {
         Author      : Jitendra Kawale.
     ************************************************************************************************/
     public static List<Sobject> updateRecordsWithoutAccessCheck(List<Sobject> listToUpdate, Boolean allOrNone) {
-        try{
-            // False Positive - Regardless of user permission we need to perform this operation. This data is used for business logic and not displayed to user.
+        	// False Positive - Regardless of user permission we need to perform this operation. This data is used for business logic and not displayed to user.
             // Updating data without checking the access. This method is called from Util class when we update license and license request after receiving successful payment.
             database.update(listToUpdate, allOrNone);
-        }catch(Exception e) {
-            system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
-        }
         return listToUpdate;
     }
     
@@ -93,14 +81,10 @@ public with sharing class QueryHandler {
         Author      : Jitendra Kawale.
     ************************************************************************************************/
     public static List<Sobject> updateRecordsWithAccessCheck(List<Sobject> listToUpdate,List<string> fieldList ,Boolean allOrNone) {
-        if(listToUpdate != null && listToUpdate.size() > 0){  
-            try{          
+        if(listToUpdate != null && listToUpdate.size() > 0){ 
                 System.debug('Object name==>'+listToUpdate[0].getSobjectType());
                 database.update(listToUpdate, allOrNone);
                 return listToUpdate;
-            }catch(Exception e) {
-                system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
-            }
         }
         return null;
     }
@@ -112,14 +96,10 @@ public with sharing class QueryHandler {
         Author      : Pradip Mohite.
     ************************************************************************************************/
     public static List<Sobject> upsertRecordsWithoutAccessCheck(List<Sobject> listToUpsert ,Boolean allOrNone) {
-        if(listToUpsert != null && listToUpsert.size() > 0){  
-            try{          
+        if(listToUpsert != null && listToUpsert.size() > 0){
                 System.debug('Object name==>'+listToUpsert[0].getSobjectType());
                 database.upsert(listToUpsert, allOrNone); 
-                return listToUpsert;
-            }catch(Exception e) {
-                system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
-            }
+                return listToUpsert;            
         }
         return null;
     }
@@ -131,13 +111,10 @@ public with sharing class QueryHandler {
         Author      : Jitendra Kawale.
     ************************************************************************************************/
     public static List<Sobject> insertRecordsWithoutAccessCheck(List<Sobject> listToInsert, Boolean allOrNone) {
-        try{
+        
             // False Positive - Regardless of user permission we need to perform this operation. This data is used for business logic and not displayed to user.
             // Inserting data without checking the access. This method is called from install Handler when we won't have aceess configured. 
-            database.Insert(listToInsert, allOrNone);
-        }catch(Exception e) {
-            system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
-        }
+            database.Insert(listToInsert, allOrNone);        
         return listToInsert;
     }
     
@@ -172,18 +149,11 @@ public with sharing class QueryHandler {
     ************************************************************************************************/
     public static List<Sobject> deleteRecordsWithAccessCheck(List<Sobject> listToDelete, Boolean allOrNone) {
         if(listToDelete != null && listToDelete.size() > 0){
-            try{
                 System.debug('Object name==>'+listToDelete[0].getSobjectType());
                 if((listToDelete[0].getSobjectType()).getDescribe().isDeletable()){
                     database.Delete(listToDelete, allOrNone);
                     return listToDelete;
                 }
-                else{
-                    return null;
-                }
-            }catch(Exception e) {
-                system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
-            }
         }
         return null;
     }

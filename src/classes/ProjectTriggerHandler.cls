@@ -25,7 +25,8 @@ public class ProjectTriggerHandler {
         
         PlatformEventSetting__c PlatformEventSetting = PlatformEventSetting__c.getValues('ProjectTaskService'); 
         System.debug('PlatformEventSetting'+PlatformEventSetting);
-        if(ptClassObj.Projects != null && ptClassObj.Projects.size() > 0 && PlatformEventSetting.Publish__c){
+        Boolean isPublish = (PlatformEventSetting != null && PlatformEventSetting.Publish__c) ? true : (PlatformEventSetting == null) ? true : false;
+        if(ptClassObj.Projects != null && ptClassObj.Projects.size() > 0 && isPublish){
            List<ProjectTaskService__e> ProjectTaskEvent = new List<ProjectTaskService__e>();
             ProjectTaskEvent.add(new ProjectTaskService__e(Data__c=JSON.serialize(ptClassObj),User__c = UserInfo.getUserId(),OrgId__c=UserInfo.getOrganizationId(),Self__c =true,Action__c=action )); 
     
@@ -48,9 +49,10 @@ public class ProjectTriggerHandler {
         }
         
         //Update setting for publishing event next time
-        PlatformEventSetting.Publish__c = true;
-        update PlatformEventSetting;
-
+        if(PlatformEventSetting != null){
+            PlatformEventSetting.Publish__c = true;
+        	update PlatformEventSetting;
+        }       
         
 	}
     

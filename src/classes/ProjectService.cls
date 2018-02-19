@@ -5,7 +5,7 @@
     Version     : 1.0 - Created
     Author      : Pradip Mohite.
 *************************************************************************************************/
-@RestResource(urlMapping='/ProductSerivce/*')
+@RestResource(urlMapping='/ProductService/*')
 global with sharing class ProjectService {
     
     /***********************************************************************************************
@@ -26,12 +26,13 @@ global with sharing class ProjectService {
         Date        : 31 Jan 2018.
         Author      : Pradip Mohite.
     ************************************************************************************************/
-    @HttpDelete
+    /*
+	@HttpDelete
     global static void deleteProject() {
         RestRequest request = RestContext.request;
         String projectId = request.requestURI.substring(
             request.requestURI.lastIndexOf('/')+1);
         Project__c projectObj = [SELECT Id FROM Project__c WHERE Id = :projectId];
         delete projectObj;
-    } 
+    } */
 }

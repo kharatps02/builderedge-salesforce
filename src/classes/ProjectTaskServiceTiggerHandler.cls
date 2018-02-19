@@ -29,14 +29,18 @@ public class ProjectTaskServiceTiggerHandler {
             }		          
         }
         if(tasks != null && tasks.size() > 0){
-            PlatformEventSetting.Publish__c = false;
-            update PlatformEventSetting;
+            if(PlatformEventSetting != null){
+               PlatformEventSetting.Publish__c = false;
+            	update PlatformEventSetting; 
+            }            
             QueryHandler.upsertRecordsWithoutAccessCheck(tasks,true);
             
         }
         if(projects != null && projects.size() > 0){
-            PlatformEventSetting.Publish__c = false;
-            update PlatformEventSetting;
+            if(PlatformEventSetting != null){
+               PlatformEventSetting.Publish__c = false;
+            	update PlatformEventSetting; 
+            } 
             QueryHandler.upsertRecordsWithoutAccessCheck(projects,true);
         }
 	}

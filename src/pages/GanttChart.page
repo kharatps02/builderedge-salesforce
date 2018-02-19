@@ -33,6 +33,7 @@
     	$(function() {
             	loadGanttChart();            
             	$( "#saveBtn" ).click(saveChanges);
+            	$( "#registerBtn" ).click(registerOrg);
             	//loadCometD();            	
         });
     
@@ -41,66 +42,95 @@
             $.post("https://builderedge-poc.herokuapp.com/api/project/getalldetails",{session_id :'{!$Api.Session_ID}',user_id : '{!$User.Id}', org_id :'{!$Organization.Id}'},function(responseBody,status,xhr){
                 	$("#processing").css( "display", "none" );    
                 	console.log(responseBody);
-                	projectData =responseBody.projects;
-                	$("#ganttChart").ganttView({ 
-                    data: responseBody.projects,
-                    slideWidth: 900,
-                    behavior: {
-                        onClick: function (changedata) { 
-                            console.log(changedata);
-                            updatedData = jQuery.grep(updatedData, function(value) {
-                              return value.id != changedata.id;
-                            });
-                            updatedData.push(changedata);
-                            $("#saveBtn").css( "display", "" );
-                            var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                            $("#eventMessage").text(msg);
-                        },
-                        onResize: function (changedata) { 
-                            console.log(changedata);
-                            updatedData = jQuery.grep(updatedData, function(value) {
-                              return value.id != changedata.id;
-                            });
-                            updatedData.push(changedata);
-                            $("#saveBtn").css( "display", "" );
-                            var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                            $("#eventMessage").text(msg);
-                        },
-                        onDrag: function (changedata) { 
-                            console.log(changedata);
-                            updatedData = jQuery.grep(updatedData, function(value) {
-                              return value.id != changedata.id;
-                            });
-                            updatedData.push(changedata);
-                            $("#saveBtn").css( "display", "" );
-                            var msg = "You change "+changedata.name+" : { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                            $("#eventMessage").text(msg);
+                //responseBody = null;
+                	if(responseBody != null && responseBody.projects != null){                        
+                        projectData =responseBody.projects;
+                        $("#ganttChart").ganttView({ 
+                        data: responseBody.projects,
+                        slideWidth: 900,
+                        behavior: {
+                            onClick: function (changedata) { 
+                                console.log(changedata);
+                                updatedData = jQuery.grep(updatedData, function(value) {
+                                  return value.Id != changedata.Id;
+                                });
+                                updatedData.push(changedata);
+                                $("#saveBtn").css( "display", "" );
+                                var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                $("#eventMessage").text(msg);
+                            },
+                            onResize: function (changedata) { 
+                                console.log(changedata);
+                                updatedData = jQuery.grep(updatedData, function(value) {
+                                  return value.Id != changedata.Id;
+                                });
+                                updatedData.push(changedata);
+                                $("#saveBtn").css( "display", "" );
+                                var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                $("#eventMessage").text(msg);
+                            },
+                            onDrag: function (changedata) { 
+                                console.log(changedata);
+                                updatedData = jQuery.grep(updatedData, function(value) {
+                                  return value.Id != changedata.Id;
+                                });
+                                updatedData.push(changedata);
+                                $("#saveBtn").css( "display", "" );
+                                var msg = "You change "+changedata.name+" : { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                $("#eventMessage").text(msg);
+                            }
                         }
-                    }
-                });               
-                },"json");
+                    });
+				}else{					
+                    $("#ganttChart").css( "display", "none" );
+                    //$("#registerBtn").css( "display", "" );
+                    window.location = "https://builderedge-poc.herokuapp.com/register";
+                    /*var params = [];
+                    params["org_id"] = "{!$Organization.Id}";            
+                    var URL = 'https://builderedge-poc.herokuapp.com/register';
+                    openRegisterPost(URL,params);*/
+				}
+			},"json");
         }
+    	function openRegisterPost(url, variables){
+            var form = document.createElement("form");
+            form.setAttribute("method", "post");
+            form.setAttribute("action", url);
+            //form.setAttribute("target", "_blank");
+            for(variable in variables)
+            {
+                var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("name", variable);
+                hiddenField.setAttribute("value", variables[variable]);
+                form.appendChild(hiddenField);
+            }
+            document.body.appendChild(form);
+            form.submit();
+    	}
+
+        
     	function saveChanges(){
             $("#processing").css( "display", "" );
             var updatedRec = Object.assign([], updatedData);
             var requestdata = {};
             requestdata['session_id'] = '{!$Api.Session_ID}';
             requestdata['user_id'] = '{!$User.Id}'; 
-            requestdata['org_id'] = '{!$Organization.Id}';
-         	requestdata['records'] = []; 
-            if(updatedRec != null && updatedRec.length > 0){
+            requestdata['org_id'] = '{!$Organization.Id}';         	
+            requestdata['records'] = []; 
+            requestdata['Data__c'] = {'Projects' : [], 'ProjectTasks':[]}; 
+            if(updatedRec != null && updatedRec.length > 0){               
                 $.each(updatedRec, function( index, singleRec ) {
                   	var rec = Object.assign({}, singleRec);
-                    var exId = rec.external_id;
-                    rec.external_id = rec.id;
-                    rec.id = exId;               
-                    rec.start_date = rec.start.getFullYear()+'-'+(rec.start.getMonth()+1)+'-'+rec.start.getDate();
-                    rec.end_date = rec.end.getFullYear()+'-'+(rec.end.getMonth()+1)+'-'+rec.end.getDate();
+                    var exId = rec.External_Id__c;
+                    rec.External_Id__c = rec.Id;
+                    rec.Id = exId;                
+                    rec.Start_Date__c = rec.start.getFullYear()+'-'+(rec.start.getMonth()+1)+'-'+rec.start.getDate();
+                    rec.End_Date__c = rec.end.getFullYear()+'-'+(rec.end.getMonth()+1)+'-'+rec.end.getDate();
                     delete rec["start"];
                     delete rec["end"];
-                  	requestdata.records.push(rec);
+                  	requestdata.Data__c.ProjectTasks.push(rec);
                 }); 
-          		$.post("https://builderedge-poc.herokuapp.com/api/task/update ",
+          		$.post("https://builderedge-poc.herokuapp.com/api/project/update ",
                    	requestdata,
                     function(data,status,xhr){
              			$("#processing").css( "display", "none" );   
@@ -110,6 +140,10 @@
              		}, 
                    	"json");
             	}           
+        }
+    	
+    	function registerOrg(){
+            alert('Navigate to register page');
         }
     	
     	function alertMsg(msg){
@@ -169,6 +203,7 @@
                		<div id="ganttChart"></div>
             	<br/><br/>
               	<button id="saveBtn" style="display:none;" class="slds-button slds-button_brand">Save Changes</button>
+                <button id="registerBtn" style="display:none;" class="slds-button slds-button_brand">Register Me !</button>
             </div>
 		</div>
 		<footer class="slds-card__footer" style="text-align: left;">
