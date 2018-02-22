@@ -18,81 +18,88 @@
     <title>Gantt Chart</title>
 </head>
 <body class="slds-scope">
-	<apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-1.4.2.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-1.4.2.js')}"/>
     <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'date.js')}"/>
     <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-ui-1.8.4.js')}"/>
     <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery.ganttView.js')}"/>
-    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'data.js')}"/>
-    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'data.js')}"/>
-    <apex:includeScript value="{!$Resource.forcetk}"/>
-    <apex:includeScript value="{!$Resource.cometd}"/>
     <script>
-    	var projectData = {};
-    	var updatedData = [];
-    	   	
-    	$(function() {
-            	loadGanttChart();            
-            	$( "#saveBtn" ).click(saveChanges);
-            	$( "#registerBtn" ).click(registerOrg);
-            	//loadCometD();            	
+        var projectData = {};
+        var updatedData = [];
+            
+        $(function() {
+                loadGanttChart();            
+                $( "#saveBtn" ).click(saveChanges);
+                $( "#registerBtn" ).click(registerOrg);
         });
     
-    	function loadGanttChart(){
-        	$("#processing").css( "display", "" );
+        function loadGanttChart(){
+            $("#processing").css( "display", "" );
             $.post("https://builderedge-poc.herokuapp.com/api/project/getalldetails",{session_id :'{!$Api.Session_ID}',user_id : '{!$User.Id}', org_id :'{!$Organization.Id}'},function(responseBody,status,xhr){
-                	$("#processing").css( "display", "none" );    
-                	console.log(responseBody);
-                //responseBody = null;
-                	if(responseBody != null && responseBody.projects != null){                        
+                    $("#processing").css( "display", "none" );    
+                    console.log(responseBody);
+                    //responseBody = null;
+                	
+                    if(responseBody != null && responseBody.projects != null){                        
                         projectData =responseBody.projects;
-                        $("#ganttChart").ganttView({ 
-                        data: responseBody.projects,
-                        slideWidth: 900,
-                        behavior: {
-                            onClick: function (changedata) { 
-                                console.log(changedata);
-                                updatedData = jQuery.grep(updatedData, function(value) {
-                                  return value.Id != changedata.Id;
-                                });
-                                updatedData.push(changedata);
-                                $("#saveBtn").css( "display", "" );
-                                var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                                $("#eventMessage").text(msg);
-                            },
-                            onResize: function (changedata) { 
-                                console.log(changedata);
-                                updatedData = jQuery.grep(updatedData, function(value) {
-                                  return value.Id != changedata.Id;
-                                });
-                                updatedData.push(changedata);
-                                $("#saveBtn").css( "display", "" );
-                                var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                                $("#eventMessage").text(msg);
-                            },
-                            onDrag: function (changedata) { 
-                                console.log(changedata);
-                                updatedData = jQuery.grep(updatedData, function(value) {
-                                  return value.Id != changedata.Id;
-                                });
-                                updatedData.push(changedata);
-                                $("#saveBtn").css( "display", "" );
-                                var msg = "You change "+changedata.name+" : { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                                $("#eventMessage").text(msg);
-                            }
+                        var projectCount = projectData.length;
+                        var taskCount = 0;
+                        $.each(projectData, function( index, value ) {
+                          taskCount += value.Project_Tasks__r.records.length;
+                        });
+                        var msg = "Project Count : "+projectCount+" \n Project Task Count : " +taskCount;
+                        $("#recordMessage").text(msg);
+                        if((projectCount+taskCount) < 20){
+                            $("#ganttChart").ganttView({ 
+                                data: responseBody.projects,
+                                slideWidth: 900,
+                                behavior: {
+                                    onClick: function (changedata) { 
+                                        console.log(changedata);
+                                        updatedData = jQuery.grep(updatedData, function(value) {
+                                          return value.Id != changedata.Id;
+                                        });
+                                        updatedData.push(changedata);
+                                        $("#saveBtn").css( "display", "" );
+                                        var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                        $("#eventMessage").text(msg);
+                                    },
+                                    onResize: function (changedata) { 
+                                        console.log(changedata);
+                                        updatedData = jQuery.grep(updatedData, function(value) {
+                                          return value.Id != changedata.Id;
+                                        });
+                                        updatedData.push(changedata);
+                                        $("#saveBtn").css( "display", "" );
+                                        var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                        $("#eventMessage").text(msg);
+                                    },
+                                    onDrag: function (changedata) { 
+                                        console.log(changedata);
+                                        updatedData = jQuery.grep(updatedData, function(value) {
+                                          return value.Id != changedata.Id;
+                                        });
+                                        updatedData.push(changedata);
+                                        $("#saveBtn").css( "display", "" );
+                                        var msg = "You change "+changedata.name+" : { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                        $("#eventMessage").text(msg);
+                                    }
+                                }
+                            });
                         }
-                    });
-				}else{					
+                }else{
                     $("#ganttChart").css( "display", "none" );
-                    //$("#registerBtn").css( "display", "" );
-                    window.location = "https://builderedge-poc.herokuapp.com/register";
-                    /*var params = [];
-                    params["org_id"] = "{!$Organization.Id}";            
-                    var URL = 'https://builderedge-poc.herokuapp.com/register';
-                    openRegisterPost(URL,params);*/
-				}
-			},"json");
+                    if(window.location.href.indexOf('lightning') != -1){
+                        window.parent.location = "https://builderedge-poc.herokuapp.com/register?origin=lightning";
+                        //window.parent.location = "http://localhost:4300/register?origin=lightning";
+                    }
+                    else{
+                        window.location= "https://builderedge-poc.herokuapp.com/register?origin=classic";
+                        //window.location = "http://localhost:4300/register/?origin=classic";
+                    }
+                }
+            },"json");
         }
-    	function openRegisterPost(url, variables){
+        function openRegisterPost(url, variables){
             var form = document.createElement("form");
             form.setAttribute("method", "post");
             form.setAttribute("action", url);
@@ -106,21 +113,21 @@
             }
             document.body.appendChild(form);
             form.submit();
-    	}
+        }
 
         
-    	function saveChanges(){
+        function saveChanges(){
             $("#processing").css( "display", "" );
             var updatedRec = Object.assign([], updatedData);
             var requestdata = {};
             requestdata['session_id'] = '{!$Api.Session_ID}';
             requestdata['user_id'] = '{!$User.Id}'; 
-            requestdata['org_id'] = '{!$Organization.Id}';         	
+            requestdata['org_id'] = '{!$Organization.Id}';          
             requestdata['records'] = []; 
             requestdata['Data__c'] = {'Projects' : [], 'ProjectTasks':[]}; 
             if(updatedRec != null && updatedRec.length > 0){               
                 $.each(updatedRec, function( index, singleRec ) {
-                  	var rec = Object.assign({}, singleRec);
+                    var rec = Object.assign({}, singleRec);
                     var exId = rec.External_Id__c;
                     rec.External_Id__c = rec.Id;
                     rec.Id = exId;                
@@ -128,89 +135,64 @@
                     rec.End_Date__c = rec.end.getFullYear()+'-'+(rec.end.getMonth()+1)+'-'+rec.end.getDate();
                     delete rec["start"];
                     delete rec["end"];
-                  	requestdata.Data__c.ProjectTasks.push(rec);
+                    requestdata.Data__c.ProjectTasks.push(rec);
                 }); 
-          		$.post("https://builderedge-poc.herokuapp.com/api/project/update ",
-                   	requestdata,
+                $.post("https://builderedge-poc.herokuapp.com/api/project/update ",
+                    requestdata,
                     function(data,status,xhr){
-             			$("#processing").css( "display", "none" );   
+                        $("#processing").css( "display", "none" );   
                         console.log(data); 
                         updatedData = [];
                         alertMsg('Data Updated successfully.');
-             		}, 
-                   	"json");
-            	}           
+                    }, 
+                    "json");
+                }           
         }
-    	
-    	function registerOrg(){
+        
+        function registerOrg(){
             alert('Navigate to register page');
         }
-    	
-    	function alertMsg(msg){
+        
+        function alertMsg(msg){
             $("#msg").html(msg);
             $("#msgDiv").fadeIn();
             setTimeout(function(){$("#msgDiv").fadeOut("slow");}, 2000); 
         }
     
-    	function loadCometD(){
-            var cometd = new org.cometd.CometD();
-            cometd.configure({
-                url: window.location.protocol+'//'+window.location.hostname+'/cometd/40.0/',
-                //url:'https://ap5.lightning.force.com/cometd/40.0/',
-                requestHeaders: { Authorization: 'Bearer {!$Api.Session_ID}'},
-              	appendMessageTypeToURL : false
-            });
-            cometd.websocketEnabled = false;
-            cometd.handshake(function(handshakeReply) {
-              	if (handshakeReply.successful) {
-                console.log('Connected to CometD.');
-                cometd.subscribe('/event/ProjectTaskService__e',
-                  	function(platformEvent) {
-                    	console.log('Platform event received: '+ JSON.stringify(platformEvent));
-                     	alert('Some changes occurred.');
-                        $("#ganttChart").html("");
-                        loadGanttChart();
-            	});               
-              }
-              else
-                console.error('Failed to connected to CometD.');
-            });
-        }
-    
     </script>
     
     <article class="slds-card">
-		<div class="slds-card__header slds-grid">
-			<header class="slds-media slds-media_center slds-has-flexi-truncate">
-				<div class="slds-media__figure">
-				<span class="slds-icon_container slds-icon--small slds-icon-standard-account" title="Gantt Chart">
-					<img src="{!URLFOR($Asset.SLDS, 'assets/icons/standard/account_60.png')}" alt="Gantt Chart" />
-				</span>
-				</div>
-				<div class="slds-media__body">
-					<h2>
-					<a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Project Gantt Chart">
-						<span class="slds-text-heading_small">Project Gantt Chart</span>
-					</a>
-					</h2>
-				</div>
-			</header>
-		</div>
-		<div class="slds-card__body slds-card__body_inner">
-			
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                <span class="slds-icon_container slds-icon--small slds-icon-standard-account" title="Gantt Chart">
+                    <img src="{!URLFOR($Asset.SLDS, 'assets/icons/standard/account_60.png')}" alt="Gantt Chart" />
+                </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Project Gantt Chart">
+                        <span class="slds-text-heading_small">Project Gantt Chart</span>
+                    </a>
+                    </h2>
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            
             <div class="slds-box" style="text-align: center;">
                 <br/><br/>
-               		<div id="ganttChart"></div>
-            	<br/><br/>
-              	<button id="saveBtn" style="display:none;" class="slds-button slds-button_brand">Save Changes</button>
+                    <div id="ganttChart"></div>
+                <br/><br/>
+                <button id="saveBtn" style="display:none;" class="slds-button slds-button_brand">Save Changes</button>
                 <button id="registerBtn" style="display:none;" class="slds-button slds-button_brand">Register Me !</button>
             </div>
-		</div>
-		<footer class="slds-card__footer" style="text-align: left;">
-			<div id="eventMessage"></div>
-			
-		</footer>
-	</article>
+        </div>
+        <footer class="slds-card__footer" style="text-align: left;">
+            <div id="eventMessage"></div>
+            <div id="recordMessage"></div>            
+        </footer>
+    </article>
     
     <div class="slds-notify_container" id="msgDiv" style="display : none;">
       <div class="slds-notify slds-notify--toast" role="alert">
@@ -225,7 +207,7 @@
         <section role="dialog" tabindex="-1" aria-label="Meaningful description of the modal content" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
             <div class="slds-modal__container">
             <div class="slds-p-around_medium" style="background: 0;">
-            	<div role="status" class="slds-spinner slds-spinner_medium">
+                <div role="status" class="slds-spinner slds-spinner_medium">
                         <span class="slds-assistive-text">Loading</span>
                         <div class="slds-spinner__dot-a"></div>
                         <div class="slds-spinner__dot-b"></div>
