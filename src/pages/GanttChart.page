@@ -1,5 +1,5 @@
-<apex:page showHeader="false" standardStylesheets="false" sidebar="false" docType="html-5.0" applyBodyTag="False" applyHtmlTag="False">
-    
+<apex:page showHeader="false" standardStylesheets="false" sidebar="false" docType="html-5.0" applyBodyTag="False" applyHtmlTag="False" controller="GanttChartController">
+
 <apex:slds />
 
 <html lang="en">
@@ -27,77 +27,115 @@
         var updatedData = [];
             
         $(function() {
-                loadGanttChart();            
-                $( "#saveBtn" ).click(saveChanges);
-                $( "#registerBtn" ).click(registerOrg);
+            	//loadGanttChart();
+            	loadAction();            
         });
     
-        function loadGanttChart(){
-            $("#processing").css( "display", "" );
-            $.post("https://builderedge-poc.herokuapp.com/api/project/getalldetails",{session_id :'{!$Api.Session_ID}',user_id : '{!$User.Id}', org_id :'{!$Organization.Id}'},function(responseBody,status,xhr){
-                    $("#processing").css( "display", "none" );    
-                    console.log(responseBody);
-                    //responseBody = null;
-                	
-                    if(responseBody != null && responseBody.projects != null){                        
-                        projectData =responseBody.projects;
-                        var projectCount = projectData.length;
-                        var taskCount = 0;
-                        $.each(projectData, function( index, value ) {
-                          taskCount += value.Project_Tasks__r.records.length;
-                        });
-                        var msg = "Project Count : "+projectCount+" \n Project Task Count : " +taskCount;
-                        $("#recordMessage").text(msg);
-                        if((projectCount+taskCount) < 20){
-                            $("#ganttChart").ganttView({ 
-                                data: responseBody.projects,
-                                slideWidth: 900,
-                                behavior: {
-                                    onClick: function (changedata) { 
-                                        console.log(changedata);
-                                        updatedData = jQuery.grep(updatedData, function(value) {
-                                          return value.Id != changedata.Id;
-                                        });
-                                        updatedData.push(changedata);
-                                        $("#saveBtn").css( "display", "" );
-                                        var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                                        $("#eventMessage").text(msg);
-                                    },
-                                    onResize: function (changedata) { 
-                                        console.log(changedata);
-                                        updatedData = jQuery.grep(updatedData, function(value) {
-                                          return value.Id != changedata.Id;
-                                        });
-                                        updatedData.push(changedata);
-                                        $("#saveBtn").css( "display", "" );
-                                        var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                                        $("#eventMessage").text(msg);
-                                    },
-                                    onDrag: function (changedata) { 
-                                        console.log(changedata);
-                                        updatedData = jQuery.grep(updatedData, function(value) {
-                                          return value.Id != changedata.Id;
-                                        });
-                                        updatedData.push(changedata);
-                                        $("#saveBtn").css( "display", "" );
-                                        var msg = "You change "+changedata.name+" : { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
-                                        $("#eventMessage").text(msg);
-                                    }
-                                }
-                            });
+    	function loadAction(){
+            $( "#saveBtn" ).click(saveChanges);
+            $( "#registerBtn" ).click(registerOrg);
+            $( "#getBtn" ).click(function(){
+                var projectId = document.getElementById('projectList').value;
+                if(projectId != null && projectId != ''){
+                    $("#processing").css( "display", "" ); 
+                    CallGanttChartGet(projectId);
+                } 
+            });
+            $( "#postBtn" ).click(function(){
+                var projectId = document.getElementById('projectList').value;
+                if(projectId != null && projectId != ''){
+                    $("#processing").css( "display", "" ); 
+                    CallGanttChartPost(projectId);
+                } 
+            });
+            var selectValues = {!Projects};
+             $('#projectList').append($("<option></option>").attr("value","").text("--None--")); 
+            $.each(selectValues, function(key, value) {   
+                 $('#projectList').append($("<option></option>")
+                                .attr("value",key)
+                                .text(value)); 
+            });
+        }
+    
+    	function loadGanttChart(responseBody,status,xhr){                	
+            if(responseBody != null && responseBody.projects != null){                        
+                projectData =responseBody.projects;
+                var projectCount = projectData.length;
+                var taskCount = 0;
+                $.each(projectData, function( index, value ) {
+                    taskCount += value.Project_Tasks__r.records.length;
+                });
+                var msg = "Project Count : "+projectCount+" \n Project Task Count : " +taskCount;
+                $("#recordMessage").text(msg);
+                if((projectCount+taskCount) < 20){
+                    $("#ganttChart").ganttView({ 
+                        data: responseBody.projects,
+                        slideWidth: 900,
+                        behavior: {
+                            onClick: function (changedata) { 
+                                console.log(changedata);
+                                updatedData = jQuery.grep(updatedData, function(value) {
+                                    return value.Id != changedata.Id;
+                                });
+                                updatedData.push(changedata);
+                                $("#saveBtn").css( "display", "" );
+                                var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                $("#eventMessage").text(msg);
+                            },
+                            onResize: function (changedata) { 
+                                console.log(changedata);
+                                updatedData = jQuery.grep(updatedData, function(value) {
+                                    return value.Id != changedata.Id;
+                                });
+                                updatedData.push(changedata);
+                                $("#saveBtn").css( "display", "" );
+                                var msg = "You change "+changedata.name+": { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                $("#eventMessage").text(msg);
+                            },
+                            onDrag: function (changedata) { 
+                                console.log(changedata);
+                                updatedData = jQuery.grep(updatedData, function(value) {
+                                    return value.Id != changedata.Id;
+                                });
+                                updatedData.push(changedata);
+                                $("#saveBtn").css( "display", "" );
+                                var msg = "You change "+changedata.name+" : { start: " + changedata.start.toString("M/d/yyyy") + ", end: " + changedata.end.toString("M/d/yyyy") + " }";
+                                $("#eventMessage").text(msg);
+                            }
                         }
-                }else{
-                    $("#ganttChart").css( "display", "none" );
-                    if(window.location.href.indexOf('lightning') != -1){
-                        window.parent.location = "https://builderedge-poc.herokuapp.com/register?origin=lightning";
-                        //window.parent.location = "http://localhost:4300/register?origin=lightning";
-                    }
-                    else{
-                        window.location= "https://builderedge-poc.herokuapp.com/register?origin=classic";
-                        //window.location = "http://localhost:4300/register/?origin=classic";
-                    }
+                    });
                 }
-            },"json");
+            }else{
+                $("#ganttChart").css( "display", "none" );
+                if(window.location.href.indexOf('lightning') != -1){
+                    window.parent.location = "https://builderedge-poc.herokuapp.com/register?origin=lightning";
+                }
+                else{
+                    window.location= "https://builderedge-poc.herokuapp.com/register?origin=classic";
+                }
+            }
+        }
+    
+        function CallGanttChartGet(projId){
+            $("#processing").css( "display", "" );
+            $.ajax({
+                 url: "https://builderedge-poc.herokuapp.com/api/project/getalldetails?p="+projId,
+                 type: "GET",
+                 headers: {sessionid :'{!$Api.Session_ID}', orgid :'{!$Organization.Id}'},
+                 success: function(responseBody,status,xhr) { debugger; console.log(responseBody); loadGanttChart(responseBody,status,xhr);}
+            });
+        }
+    	function CallGanttChartPost(projId){
+            $("#processing").css( "display", "" );
+            var Ids = [];
+            Ids.push(projId);
+           	$.ajax({
+                  type: 'POST',
+                  url: "https://builderedge-poc.herokuapp.com/api/project/getalldetails",
+                  data:Ids,
+                  headers: {sessionid :'{!$Api.Session_ID}', orgid :'{!$Organization.Id}'},
+                  success: function(responseBody,status,xhr) { debugger; console.log(responseBody); loadGanttChart(responseBody,status,xhr);}
+            });
         }
         function openRegisterPost(url, variables){
             var form = document.createElement("form");
@@ -158,6 +196,17 @@
             $("#msgDiv").fadeIn();
             setTimeout(function(){$("#msgDiv").fadeOut("slow");}, 2000); 
         }
+    	function selectPosition(method){
+           var projectId = document.getElementById('projectList').value;
+           if(projectId != null && projectId != ''){
+               $("#processing").css( "display", "" ); 
+               if(method == 'Get'){
+                   CallGanttChartGet(projectId);
+              	}else{                    
+                   CallGanttChartPost(projectId);
+                }
+           }            	
+        }
     
     </script>
     
@@ -172,11 +221,18 @@
                 <div class="slds-media__body">
                     <h2>
                     <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Project Gantt Chart">
-                        <span class="slds-text-heading_small">Project Gantt Chart</span>
-                    </a>
+                        <span class="slds-text-heading_small">Project Gantt Chart </span>                        
+                        </a><br/>
+                        <span class="slds-text-heading_small">Select Project :- </span>
+                        <span >
+                            <select id="projectList" style="width: 150px;" class="slds-select"></select>                                       
+                            <button id="getBtn" class="slds-button slds-button_brand">By Get</button>
+                            <button id="postBtn" class="slds-button slds-button_brand">By Post</button>
+                        </span>
                     </h2>
                 </div>
             </header>
+            
         </div>
         <div class="slds-card__body slds-card__body_inner">
             
@@ -218,5 +274,5 @@
         <div class="slds-backdrop slds-backdrop_open" style="background: rgba(96, 97, 99, 0.8);"></div>
     </div>
 </body>
-</html>
+</html>   
 </apex:page>
