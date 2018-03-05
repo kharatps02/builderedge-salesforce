@@ -9,9 +9,9 @@
 public class ProjectTaskServiceTiggerTest {
 
     @isTest static void InsertAndUpdateProject() {
-        PlatformEventSetting__c setting = new PlatformEventSetting__c();
-        setting.Name = 'ProjectTaskService';
-        setting.Publish__c = true;
+        Builder_Edge_Setting__c setting = new Builder_Edge_Setting__c();
+        setting.Name = 'PlatformEventPublish';
+        setting.Value__c = 'True';
         insert setting;
         Project__c newProject = new Project__c();
         newProject.Name = 'Test';
@@ -26,9 +26,9 @@ public class ProjectTaskServiceTiggerTest {
     }
     
     @isTest static void InsertAndUpdateProjectTask() {
-        PlatformEventSetting__c setting = new PlatformEventSetting__c();
-        setting.Name = 'ProjectTaskService';
-        setting.Publish__c = true;
+        Builder_Edge_Setting__c setting = new Builder_Edge_Setting__c();
+        setting.Name = 'PlatformEventPublish';
+        setting.Value__c = 'True';
         insert setting;
         Project__c newProject = new Project__c();
         newProject.Name = 'Test';
@@ -50,9 +50,9 @@ public class ProjectTaskServiceTiggerTest {
     }
     
     @isTest static void publishEvent(){
-        PlatformEventSetting__c setting = new PlatformEventSetting__c();
-        setting.Name = 'ProjectTaskService';
-        setting.Publish__c = true;
+        Builder_Edge_Setting__c setting = new Builder_Edge_Setting__c();
+        setting.Name = 'PlatformEventPublish';
+        setting.Value__c = 'True';
         insert setting;
         Project__c newProject = new Project__c();
         newProject.Name = 'Test';

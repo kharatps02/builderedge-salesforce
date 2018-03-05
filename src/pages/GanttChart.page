@@ -23,47 +23,60 @@
     <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-ui-1.8.4.js')}"/>
     <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery.ganttView.js')}"/>
     <script>
-        var projectData = {};
         var updatedData = [];
-            
+		var selectValues = {};
+        var HerokuAppURL = 'https://builderedge-poc.herokuapp.com';
         $(function() {
             	//loadGanttChart();
             	loadAction();            
         });
     
     	function loadAction(){
-            $( "#saveBtn" ).click(saveChanges);
-            $( "#registerBtn" ).click(registerOrg);
-            $( "#getBtn" ).click(function(){
-                var projectId = document.getElementById('projectList').value;
+            $("#saveBtn").click(saveChanges);
+            $("#saveAppURLBtn").click(saveUrl);
+            $( "#getBtn" ).click(function(){                
+         		var projectId = getSelectValues(document.getElementById('projectList')).toString();
                 if(projectId != null && projectId != ''){
                     $("#processing").css( "display", "" ); 
                     CallGanttChartGet(projectId);
                 } 
             });
             $( "#postBtn" ).click(function(){
-                var projectId = document.getElementById('projectList').value;
-                if(projectId != null && projectId != ''){
+                var projectId = getSelectValues(document.getElementById('projectList'));
+                if(projectId != null && projectId.length > 0){
                     $("#processing").css( "display", "" ); 
                     CallGanttChartPost(projectId);
                 } 
             });
-            var selectValues = {!Projects};
-             $('#projectList').append($("<option></option>").attr("value","").text("--None--")); 
+            selectValues = {!Projects};
             $.each(selectValues, function(key, value) {   
                  $('#projectList').append($("<option></option>")
                                 .attr("value",key)
                                 .text(value)); 
-            });
+            });            
+            SetHerokuAppURL('{!HerokuAppURL}');
         }
     
     	function loadGanttChart(responseBody,status,xhr){                	
+            $("#processing").css( "display", "none" ); 
             if(responseBody != null && responseBody.projects != null){                        
-                projectData =responseBody.projects;
+               	var projectData =responseBody.projects;
+                var unauthorizedProject =  responseBody.error.unauthorized;
+                if(unauthorizedProject && unauthorizedProject.length > 0){
+                    var msg = "Unauthorized Project Name : ";
+                    $.each(unauthorizedProject, function( index, value ) {
+                       	msg += selectValues[value]+" , ";
+                    });
+                	$("#unauthorizedProject").text(msg);
+                }else{
+                    var msg = "All are authorized projects.";                    
+                	$("#unauthorizedProject").text(msg);
+                }
                 var projectCount = projectData.length;
                 var taskCount = 0;
                 $.each(projectData, function( index, value ) {
-                    taskCount += value.Project_Tasks__r.records.length;
+                    if(value.series != null)
+                    	taskCount += value.series.length;
                 });
                 var msg = "Project Count : "+projectCount+" \n Project Task Count : " +taskCount;
                 $("#recordMessage").text(msg);
@@ -104,55 +117,55 @@
                             }
                         }
                     });
-                }
+                } 
             }else{
-                $("#ganttChart").css( "display", "none" );
-                if(window.location.href.indexOf('lightning') != -1){
-                    window.parent.location = "https://builderedge-poc.herokuapp.com/register?origin=lightning";
-                }
-                else{
-                    window.location= "https://builderedge-poc.herokuapp.com/register?origin=classic";
-                }
+                redirectToOrgRegistration();
             }
         }
     
-        function CallGanttChartGet(projId){
+    	function redirectToOrgRegistration(){
+            $("#ganttChart").css( "display", "none" );
+            if(window.location.href.indexOf('lightning') != -1){
+                window.parent.location = HerokuAppURL+"/register?origin=lightning";
+            }
+            else{
+                window.location= HerokuAppURL+"/register?origin=classic";
+            }
+        }
+    
+    	function CallGanttChartGet(projId){
             $("#processing").css( "display", "" );
             $.ajax({
-                 url: "https://builderedge-poc.herokuapp.com/api/project/getalldetails?p="+projId,
+                url: HerokuAppURL+"/api/project/getalldetails?p="+projId,
                  type: "GET",
-                 headers: {sessionid :'{!$Api.Session_ID}', orgid :'{!$Organization.Id}'},
-                 success: function(responseBody,status,xhr) { debugger; console.log(responseBody); loadGanttChart(responseBody,status,xhr);}
+                 beforeSend: function(xhr){xhr.setRequestHeader('org-id', '{!$Organization.Id}'); xhr.setRequestHeader('session-id', '{!$Api.Session_ID}'); },
+                 success: function(responseBody,status,xhr) { console.log(responseBody); loadGanttChart(responseBody,status,xhr);},
+                 error: function(error) {	var e = JSON.parse(error.response); 
+                                             if(e.message == 'Org not registered' ){
+                                                 redirectToOrgRegistration();
+                                             }else{
+                                                 alert(error.message);
+                                             }
+                                        }
             });
         }
-    	function CallGanttChartPost(projId){
+    	function CallGanttChartPost(Ids){
             $("#processing").css( "display", "" );
-            var Ids = [];
-            Ids.push(projId);
            	$.ajax({
                   type: 'POST',
-                  url: "https://builderedge-poc.herokuapp.com/api/project/getalldetails",
+                url: HerokuAppURL+"/api/project/getalldetails",
                   data:Ids,
-                  headers: {sessionid :'{!$Api.Session_ID}', orgid :'{!$Organization.Id}'},
-                  success: function(responseBody,status,xhr) { debugger; console.log(responseBody); loadGanttChart(responseBody,status,xhr);}
+                  beforeSend: function(xhr){xhr.setRequestHeader('org-id', '{!$Organization.Id}'); xhr.setRequestHeader('session-id', '{!$Api.Session_ID}'); },
+                  success: function(responseBody,status,xhr) { console.log(responseBody); loadGanttChart(responseBody,status,xhr);},
+                  error: function(error) {	var e = JSON.parse(error.response); 
+                                             if(e.message == 'Org not registered' ){
+                                                 redirectToOrgRegistration();
+                                             }else{
+                                                 alert(error.message);
+                                             }
+                                         }
             });
-        }
-        function openRegisterPost(url, variables){
-            var form = document.createElement("form");
-            form.setAttribute("method", "post");
-            form.setAttribute("action", url);
-            //form.setAttribute("target", "_blank");
-            for(variable in variables)
-            {
-                var hiddenField = document.createElement("input");
-                hiddenField.setAttribute("name", variable);
-                hiddenField.setAttribute("value", variables[variable]);
-                form.appendChild(hiddenField);
-            }
-            document.body.appendChild(form);
-            form.submit();
-        }
-
+        }        
         
         function saveChanges(){
             $("#processing").css( "display", "" );
@@ -175,7 +188,7 @@
                     delete rec["end"];
                     requestdata.Data__c.ProjectTasks.push(rec);
                 }); 
-                $.post("https://builderedge-poc.herokuapp.com/api/project/update ",
+                $.post(HerokuAppURL+"/api/project/update ",
                     requestdata,
                     function(data,status,xhr){
                         $("#processing").css( "display", "none" );   
@@ -186,31 +199,54 @@
                     "json");
                 }           
         }
-        
-        function registerOrg(){
-            alert('Navigate to register page');
-        }
-        
+            
         function alertMsg(msg){
             $("#msg").html(msg);
             $("#msgDiv").fadeIn();
             setTimeout(function(){$("#msgDiv").fadeOut("slow");}, 2000); 
+        }	
+    	
+    	function getSelectValues(select) {
+          var result = [];
+          var options = select && select.options;
+          var opt;
+          for (var i=0, iLen=options.length; i<iLen; i++) {
+            opt = options[i];
+        
+            if (opt.selected) {
+              result.push(opt.value || opt.text);
+            }
+          }
+          return result;
         }
-    	function selectPosition(method){
-           var projectId = document.getElementById('projectList').value;
-           if(projectId != null && projectId != ''){
-               $("#processing").css( "display", "" ); 
-               if(method == 'Get'){
-                   CallGanttChartGet(projectId);
-              	}else{                    
-                   CallGanttChartPost(projectId);
-                }
-           }            	
+    
+        function SetHerokuAppURL(url){
+            if(url != 'NoURL'){
+                HerokuAppURL = url;
+            }else{
+                $('#GanttChartCard').css("display", "none");
+                $('#SettingCard').css("display", "");
+            }
+        }
+    	
+    	function saveUrl(){
+            var url = $('#HerokuAppURL').val();
+            if(url && url != ''){                
+                GanttChartController.setHerokuAppURL(url,function(){
+                	HerokuAppURL = url;
+                    console.log('Set URL');
+                    $('#GanttChartCard').css("display", "");
+                	$('#SettingCard').css("display", "none");
+                });
+            }else{
+            	alertMsg('Enter URL');
+            }
         }
     
     </script>
     
-    <article class="slds-card">
+    <article id="GanttChartCard" class="slds-card">
+        
         <div class="slds-card__header slds-grid">
             <header class="slds-media slds-media_center slds-has-flexi-truncate">
                 <div class="slds-media__figure">
@@ -224,8 +260,8 @@
                         <span class="slds-text-heading_small">Project Gantt Chart </span>                        
                         </a><br/>
                         <span class="slds-text-heading_small">Select Project :- </span>
-                        <span >
-                            <select id="projectList" style="width: 150px;" class="slds-select"></select>                                       
+                        <span style="vertical-align: middle;">
+                            <select id="projectList" style="width: 150px;" class="slds-select" multiple="multiple"></select>                                       
                             <button id="getBtn" class="slds-button slds-button_brand">By Get</button>
                             <button id="postBtn" class="slds-button slds-button_brand">By Post</button>
                         </span>
@@ -244,11 +280,46 @@
                 <button id="registerBtn" style="display:none;" class="slds-button slds-button_brand">Register Me !</button>
             </div>
         </div>
-        <footer class="slds-card__footer" style="text-align: left;">
+        <footer class="slds-card__footer" style="text-align: left; font-size: large;">
             <div id="eventMessage"></div>
-            <div id="recordMessage"></div>            
+            <div id="recordMessage"></div> 
+             <div id="unauthorizedProject"></div>
         </footer>
     </article>
+    
+    <article id="SettingCard" class="slds-card" style="display:none;">        
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                <span class="slds-icon_container slds-icon--small slds-icon-standard-account" title="Gantt Chart">
+                    <img src="{!URLFOR($Asset.SLDS, 'assets/icons/standard/account_60.png')}" alt="Gantt Chart" />
+                </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                    	<a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Project Gantt Chart">
+                        	<span class="slds-text-heading_small">Heroku App Setting </span>                        
+                   		</a>
+                    </h2>
+                </div>
+            </header>            
+        </div>
+        <div class="slds-card__body slds-card__body_inner">            
+            <div class="slds-box" style=" width: 50%; border: 0;">
+                <div class="slds-form slds-form_horizontal">
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="HerokuAppURL">Heroku App URL</label>
+                        <div class="slds-form-element__control">
+                          <input type="text" id="HerokuAppURL" class="slds-input" placeholder="Enter URL e.g. - https://builderedge-poc.herokuapp.com"/>
+                        </div>
+                    </div>
+                    <div class="slds-form-element" style="padding-right: 50%;">
+                        <button id="saveAppURLBtn" class="slds-button slds-button_brand">Save Changes</button>
+                    </div>            
+                </div>
+            </div>
+        </div>      
+    </article>    
     
     <div class="slds-notify_container" id="msgDiv" style="display : none;">
       <div class="slds-notify slds-notify--toast" role="alert">
@@ -256,8 +327,7 @@
           <h2 class="slds-text-heading--small" id="msg">Base Toast</h2>
         </div>
       </div>
-    </div>
-    
+    </div>    
     
     <div id="processing" style="height: 640px; display:none;">
         <section role="dialog" tabindex="-1" aria-label="Meaningful description of the modal content" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">

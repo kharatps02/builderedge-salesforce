@@ -23,9 +23,9 @@ public class ProjectTaskTriggerHandler {
             }
         }
         
-        PlatformEventSetting__c PlatformEventSetting = PlatformEventSetting__c.getValues('ProjectTaskService'); 
+        Builder_Edge_Setting__c PlatformEventSetting = Builder_Edge_Setting__c.getValues('PlatformEventPublish'); 
         System.debug('PlatformEventSetting'+PlatformEventSetting);
-        Boolean isPublish = (PlatformEventSetting != null && PlatformEventSetting.Publish__c) ? true : (PlatformEventSetting == null) ? true : false;
+        Boolean isPublish = (PlatformEventSetting != null && PlatformEventSetting.Value__c == 'True') ? true : (PlatformEventSetting == null) ? true : false;
         if(ptClassObj.ProjectTasks != null && ptClassObj.ProjectTasks.size() > 0 && isPublish){
           	List<ProjectTaskService__e> ProjectTaskEvent = new List<ProjectTaskService__e>();
             System.debug('ptClassObj==>'+ptClassObj);
@@ -51,7 +51,7 @@ public class ProjectTaskTriggerHandler {
         
         //Update setting for publishing event next time
         if(PlatformEventSetting != null){
-            PlatformEventSetting.Publish__c = true;
+            PlatformEventSetting.Value__c = 'True';
         	update PlatformEventSetting;
         }
         

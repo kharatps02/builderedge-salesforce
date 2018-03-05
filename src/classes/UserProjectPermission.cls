@@ -8,6 +8,10 @@
 @RestResource(urlMapping='/UserProjectPermission/*')
 global with sharing class UserProjectPermission {
 
+    /*************************************************************************************************
+        Method Name  : checkProjectPermission
+        Description : This methode use to check accesss of project record for login user
+    *************************************************************************************************/
     @HttpGet
     global static List<Id> checkProjectPermission() {
         String ids = RestContext.request.params.get('id');

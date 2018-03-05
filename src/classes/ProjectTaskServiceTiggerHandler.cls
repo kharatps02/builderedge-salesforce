@@ -6,11 +6,16 @@
     Author      : Pradip Mohite.
 *************************************************************************************************/
 public class ProjectTaskServiceTiggerHandler {
+    
+    /*************************************************************************************************
+        Method Name  : upsertProjectTask
+        Description : This method use to subscribe platform event and update project and project task record.
+    *************************************************************************************************/
     public static void upsertProjectTask(List<ProjectTaskService__e> projectTaskServices){
         List<Project_Task__c> tasks= new List<Project_Task__c>();
         List<Project__c> projects= new List<Project__c>();
         system.debug('projectTaskServices==>'+projectTaskServices);
-        PlatformEventSetting__c PlatformEventSetting = PlatformEventSetting__c.getValues('ProjectTaskService');
+        Builder_Edge_Setting__c PlatformEventSetting = Builder_Edge_Setting__c.getValues('PlatformEventPublish');
         System.debug('PlatformEventSetting'+PlatformEventSetting);
         for (ProjectTaskService__e projectTask :projectTaskServices) { 
             if(!projectTask.Self__c && projectTask.Data__c != null){
@@ -30,17 +35,17 @@ public class ProjectTaskServiceTiggerHandler {
         }
         if(tasks != null && tasks.size() > 0){
             if(PlatformEventSetting != null){
-               PlatformEventSetting.Publish__c = false;
+               PlatformEventSetting.Value__c = 'False';
             	update PlatformEventSetting; 
-            }            
+            }         
             QueryHandler.upsertRecordsWithoutAccessCheck(tasks,true);
             
         }
         if(projects != null && projects.size() > 0){
             if(PlatformEventSetting != null){
-               PlatformEventSetting.Publish__c = false;
+               PlatformEventSetting.Value__c = 'False';
             	update PlatformEventSetting; 
-            } 
+            }
             QueryHandler.upsertRecordsWithoutAccessCheck(projects,true);
         }
 	}

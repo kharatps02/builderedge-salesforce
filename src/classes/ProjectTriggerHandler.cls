@@ -7,7 +7,11 @@
 *************************************************************************************************/
 public class ProjectTriggerHandler {
     
- 	public static void publishProjectTaskService(List<project__c> projects, Map<Id, project__c> oldMap, boolean isInsert){
+ 	/*************************************************************************************************
+        Method Name  : publishProjectTaskService
+        Description : This method use to publish platform event when changes occure in project record.
+    *************************************************************************************************/
+    public static void publishProjectTaskService(List<project__c> projects, Map<Id, project__c> oldMap, boolean isInsert){
     	projectTaskClass ptClassObj = new projectTaskClass();
         string action = 'insert';
         if(isInsert){
@@ -22,10 +26,10 @@ public class ProjectTriggerHandler {
                 }
             }
         }
-        
-        PlatformEventSetting__c PlatformEventSetting = PlatformEventSetting__c.getValues('ProjectTaskService'); 
+         
+        Builder_Edge_Setting__c PlatformEventSetting = Builder_Edge_Setting__c.getValues('PlatformEventPublish'); 
         System.debug('PlatformEventSetting'+PlatformEventSetting);
-        Boolean isPublish = (PlatformEventSetting != null && PlatformEventSetting.Publish__c) ? true : (PlatformEventSetting == null) ? true : false;
+        Boolean isPublish = (PlatformEventSetting != null && PlatformEventSetting.Value__c == 'True') ? true : (PlatformEventSetting == null) ? true : false;
         if(ptClassObj.Projects != null && ptClassObj.Projects.size() > 0 && isPublish){
            List<ProjectTaskService__e> ProjectTaskEvent = new List<ProjectTaskService__e>();
             ProjectTaskEvent.add(new ProjectTaskService__e(Data__c=JSON.serialize(ptClassObj),User__c = UserInfo.getUserId(),OrgId__c=UserInfo.getOrganizationId(),Self__c =true,Action__c=action )); 
@@ -50,7 +54,7 @@ public class ProjectTriggerHandler {
         
         //Update setting for publishing event next time
         if(PlatformEventSetting != null){
-            PlatformEventSetting.Publish__c = true;
+            PlatformEventSetting.Value__c = 'True';
         	update PlatformEventSetting;
         }       
         

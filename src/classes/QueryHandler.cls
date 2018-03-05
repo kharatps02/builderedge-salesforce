@@ -129,10 +129,7 @@ public with sharing class QueryHandler {
         if(listToInsert != null && listToInsert.size() > 0){
             try{
                 System.debug('Object name==>'+listToInsert[0].getSobjectType());
-                //v1.1 starts here.
-               
-                    //v1.1 ends here.
-                    database.Insert(listToInsert, allOrNone);
+               	database.Insert(listToInsert, allOrNone);
                     return listToInsert;
             }catch(Exception e) {
                 system.debug('XTNPay exception occurred==>'+e.getMessage()+' : stackTrace==>'+e.getStackTraceString());
