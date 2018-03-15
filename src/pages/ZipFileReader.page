@@ -1,0 +1,96 @@
+<apex:page docType="html-5.0" standardStylesheets="false" showHeader="false" sidebar="false" controller="GanttChartController">
+
+<head>
+    <title>Project Data HTTP Compression</title>
+</head>
+    <apex:slds />
+    <apex:includeScript value="{!URLFOR($Resource.Jquery_GanttChart, 'jquery-1.4.2.js')}"/>
+    <script>
+    
+    var selectValues = {};
+    var HerokuAppURL = 'https://builderedge-poc.herokuapp.com';
+    var date1, date2, date3;
+    $(function() { loadFunction(); });        
+        
+    function loadFunction(){
+        selectValues = {!Projects};
+        $.each(selectValues, function(key, value) {   
+            $('#projectList').append($("<option></option>")
+                                     .attr("value",key)
+                                     .text(value)); 
+        }); 
+        $( "#getZip" ).click(function(){                
+            var projectId = getSelectValues(document.getElementById('projectList')).toString();
+            if(projectId != null && projectId != ''){
+                getProjectData(projectId);
+            } 
+        });
+    }
+    function getProjectData(projId){
+        date1= new Date();            
+        $.ajax({
+            url: 'https://builderedge-poc.herokuapp.com/api/project/data/a007F00000BRTkvQAH ', //HerokuAppURL+"/api/project/data/"+projId,
+            type: "GET",
+            success: function(responseBody,status,xhr) { date2= new Date(); parseProjectData(responseBody,status,xhr); },
+            error: function(xhr,status,error ) { console.log(error); }
+        });            
+    }
+    
+    function parseProjectData(responseBody,status,xhr){
+        $("#RequestTime").text("Time taken to fetch the file from Node server :-" + ((date2 -date1) /1000) + " sec.");
+        var records = typeof responseBody === 'String' ? JSON.parse(responseBody) : responseBody;
+        console.log(records.tasks.rows.length);
+        $("#recordMessage").text("Data :- Count of Project Task : " +records.tasks.rows.length + " And Count of Task Dependencies : " + records.dependencies.rows.length);
+        date3= new Date();
+        $("#FileReadTime").text("Time taken to parse and read the file  :-" + ((date3 -date2) /1000) + " sec.");
+    }
+    
+    function getSelectValues(select) {
+        var result = [];
+        var options = select && select.options;
+        var opt;
+        for (var i=0, iLen=options.length; i<iLen; i++) {
+            opt = options[i];        
+            if (opt.selected) {
+                result.push(opt.value || opt.text);
+            }
+        }
+        return result;
+    }
+                
+    </script>
+<body>
+    <article id="GanttChartCard" class="slds-card">
+        
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                <span class="slds-icon_container slds-icon--small slds-icon-standard-account" >
+                    
+                </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Project Gantt Chart">
+                        <span class="slds-text-heading_small">Project Gantt Chart </span>                        
+                        </a><br/>
+                        <span class="slds-text-heading_small">Select Project :- </span>
+                        <span style="vertical-align: middle;">
+                            <select id="projectList" style="width: 150px;" class="slds-select"></select>                                       
+                            <button id="getZip" class="slds-button slds-button_brand">Get Project Data</button>
+                        </span>
+                    </h2>
+                </div>
+            </header>
+            
+        </div>
+        <footer class="slds-card__footer" style="text-align: left; font-size: large;">
+            <div id="RequestTime"></div>
+            <div id="FileReadTime"></div>
+            <div id="recordMessage"></div> 
+        </footer>
+    </article>
+    
+</body>
+
+</apex:page>
